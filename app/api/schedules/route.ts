@@ -21,13 +21,10 @@ export async function GET(req: Request) {
 
         //Date range filter
         if (date1 && date2) {
-            const start = new Date(date1);
-            const end = new Date(date2);
-
             //Interpret search dates in NZ local time
-            //Server expected to be run in Pacific/Auckland timezone
-            start.setHours(0, 0, 0, 0);
-            end.setHours(23, 59, 59, 999);
+            //Otherwise, Vercel will use UTC time for searching
+            const start = new Date(`${date1}T00:00:00+12:00`);
+            const end = new Date(`${date2}T23:59:59.999+12:00`);
 
             query.depDate = {
                 $gte: start,
