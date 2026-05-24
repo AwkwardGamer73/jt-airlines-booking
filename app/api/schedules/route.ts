@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Filter, Document } from "mongodb";
 import { connectDB } from "@/lib/mongodb";
+import { Schedule } from "@/src/types/db";
 
 export async function GET(req: Request) {
     try {
@@ -34,18 +35,20 @@ export async function GET(req: Request) {
 
         //Fetch schedules
         const schedules = await db
-            .collection("schedules")
+            .collection<Schedule>("schedules")
             .find(query)
             .sort({ depDate: 1 })       //Orders search results by departure date (earliest first)
             .toArray();
 
         //Computing seats left
-        const flightsPlusSeatsLeft = schedules.map((flight) => ({
-            ...flight,
-            seatsLeft: flight.seats - (flight.bookings?.length || 0),
-        }));
+        const flightsPlusSeatsLeft
+            = schedules.map(flight => ({
+                ...flight,
+                seatsLeft: flight.seats - (flight.bookings?.length || 0),
+            }));
 
         return NextResponse.json(flightsPlusSeatsLeft);
+
     } catch (error) {
         console.error("Schedules API error:", error);
 
