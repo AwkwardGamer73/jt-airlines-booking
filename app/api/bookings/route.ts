@@ -1,27 +1,18 @@
-import {NextResponse} from "next/server";
+import {NextRequest, NextResponse} from "next/server";
 import {ObjectId} from "mongodb";
 import {nanoid} from "nanoid";
 import {connectDB} from "@/lib/mongodb";
 import {Schedule, Passenger} from "@/src/types/db";
 
-export async function POST(req:Request){
+export async function POST(req:NextRequest){
     try{
         const body = await req.json();
 
-        const {scheduleID, passenger} = body;
+        const {scheduleID, passengerID} = body;
 
-        if(!scheduleID || !passenger){
+        if(!scheduleID || !passengerID){
             return NextResponse.json(
                 {error: "Missing booking information"},
-                {status: 400}
-            );
-        }
-
-        const { title, firstName, surname, email, gender} = passenger;
-
-        if(!title || !firstName || !surname || !email || !gender){
-            return NextResponse.json(
-                {error: "All passenger fields are required to make a booking."},
                 {status: 400}
             );
         }
@@ -41,6 +32,17 @@ export async function POST(req:Request){
             )
         }
 
+        const passenger = await passengers.findOne({_id: new ObjectId(passengerID)});
+
+        if(!passenger){
+            return NextResponse.json(
+                {error: "Passenger not found"},
+                {status: 404}
+            )
+        }
+
+        const {title, firstName, surname, email} = passenger;
+
         //Prevent overbooking
         const currentBookings = schedule.bookings?.length || 0;
 
@@ -49,25 +51,6 @@ export async function POST(req:Request){
                 {error: "Flight is already full"},
                 {status: 400}
             )
-        }
-
-        //Reuse passenger if email already exists
-        const existingPassenger = await passengers.findOne({email: email.toLowerCase()});
-
-        let passengerID : ObjectId;
-
-        if(existingPassenger){
-            passengerID = existingPassenger._id;
-        } else{
-            const passengerInsert = await passengers.insertOne({
-                title,
-                firstName,
-                surname,
-                email: email.toLowerCase(),
-                gender,
-            });
-
-            passengerID = passengerInsert.insertedId;
         }
 
         //Generate booking reference

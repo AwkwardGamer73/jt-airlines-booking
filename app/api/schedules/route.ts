@@ -1,17 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Filter, Document } from "mongodb";
 import { connectDB } from "@/lib/mongodb";
 import { Schedule } from "@/src/types/db";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
     try {
-        const { searchParams } = new URL(req.url);
-
         //Search parameters for finding scheduled flights
-        const orig = searchParams.get("orig");
-        const dest = searchParams.get("dest");
-        const date1 = searchParams.get("date1");
-        const date2 = searchParams.get("date2");
+        const orig = req.nextUrl.searchParams.get("orig");
+        const dest = req.nextUrl.searchParams.get("dest");
+        const date1 = req.nextUrl.searchParams.get("date1");
+        const date2 = req.nextUrl.searchParams.get("date2");
 
         const db = await connectDB();
 

@@ -16,6 +16,7 @@ export interface Schedule {
     _id: ObjectId;
 
     flightNo: string,
+    planeType: string,
     origin: string;
     dest: string;
 
@@ -38,5 +39,4 @@ export interface Passenger{
     surname: string;
 
     email: string;
-    gender: string;
 }
