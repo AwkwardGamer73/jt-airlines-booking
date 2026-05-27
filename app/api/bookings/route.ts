@@ -4,6 +4,40 @@ import {nanoid} from "nanoid";
 import {connectDB} from "@/lib/mongodb";
 import {Schedule, Passenger} from "@/src/types/db";
 
+//Getting all bookings associated with a passengerID
+export async function GET(req: NextRequest){
+    try{
+        const passengerID = req.nextUrl.searchParams.get("passengerID");
+
+        if(!passengerID){
+            return NextResponse.json(
+                {error: "Passenger ID required"},
+                {status: 400}
+            );
+        }
+
+        const db = await connectDB();
+
+        const schedules = db.collection<Schedule>("schedules");
+
+        //Find all flights with bookings matching passenger's ID
+        const flights = await schedules
+            .find({"bookings.passengerID": new ObjectId(passengerID)})
+            .toArray();
+
+        return NextResponse.json(flights);
+
+    } catch (error){
+        console.error(error);
+
+        return NextResponse.json(
+            { error: "Failed to fetch bookings" },
+            { status: 500 }
+        );
+    }
+
+}
+
 export async function POST(req:NextRequest){
     try{
         const body = await req.json();
@@ -59,7 +93,7 @@ export async function POST(req:NextRequest){
         //Booking object
         const booking = {
             bookingRef,
-            passengerID,
+            passengerID: passenger._id,
 
             title,
             firstName,

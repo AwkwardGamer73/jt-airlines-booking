@@ -1,7 +1,6 @@
 import {NextRequest, NextResponse} from "next/server";
 import {connectDB} from "@/lib/mongodb";
 import {Passenger} from "@/src/types/db";
-import {error} from "next/dist/build/output/log";
 
 export async function GET(req: NextRequest){
     const email = req.nextUrl.searchParams.get("email");
@@ -17,7 +16,7 @@ export async function GET(req: NextRequest){
 
     const passenger = await db
         .collection<Passenger>("passengers")
-        .findOne({email:email});
+        .findOne({email:email.toLowerCase()});
 
     if(!passenger){
         return NextResponse.json(
@@ -45,7 +44,7 @@ export async function POST(req: NextRequest){
         const db = await connectDB();
 
         //Checks just in case, as during creation phase, user may have changed email to an email ALREADY in database
-        const existingPassenger = await db.collection<Passenger>("passengers").findOne({email:email});
+        const existingPassenger = await db.collection<Passenger>("passengers").findOne({email:email.toLowerCase()});
 
         if(existingPassenger){
             return NextResponse.json(
