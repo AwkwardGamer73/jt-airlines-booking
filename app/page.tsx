@@ -9,6 +9,7 @@ import {airports, getAirportName} from "@/lib/airports";
 
 //Custom-Made React Components
 import FlightCard from "@/components/FlightCard";
+import BookingCard from "@/components/BookingCard";
 
 export default function Home(){
   //Search parameters for flights
@@ -48,7 +49,15 @@ export default function Home(){
   //Finds all flights with specific parameters
   async function searchFlights(){
     //Prevents searchFlights() from running without a date range
-    if(!date1 && !date2){
+    if((!date1 && !date2) || (!date1 || !date2)){
+      alert("Please enter your date selection.");
+      setFlights([]);
+      return;
+    }
+
+    //Prevents end date being before start date in the date range
+    if(new Date(date2) < new Date(date1)){
+      alert("To Date can not be earlier than From Date.");
       setFlights([]);
       return;
     }
@@ -155,6 +164,7 @@ export default function Home(){
 
     if(!selectedFlight || !loggedInPassenger){
       alert("Please log in first and select a flight.");
+      setBookingLoading(false);
       return;
     }
 
@@ -165,6 +175,7 @@ export default function Home(){
 
     if(alreadyBooked){
       alert("You're already booked on this flight");
+      setBookingLoading(false);
       return;
     }
 
@@ -250,7 +261,7 @@ export default function Home(){
   return(
       <main className="min-h-screen bg-slate-100">
 
-        {/*Top Banner*/}
+        {/*Banner*/}
         <div className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-slate-900/90 backdrop-blur">
           <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-3">
 
@@ -283,13 +294,19 @@ export default function Home(){
         </div>
 
         {/*Hero Section*/}
-        <section className="relative mt-12 h-[50vh] bg-cover bg-center">
+        {/*Background image found free-to-use on Unsplash*/}
+        <section
+            className="relative mt-12 h-[50vh] bg-cover bg-center"
+            style={{
+              backgroundImage:
+                  "url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?q=80&w=1748&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"
+        }}>
           <div className="absolute inset-0 bg-black/60"/>
 
           <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-white">
-            <h1 className="mb-4 text-center text-5xl font-bold md:text-6xl">JT Airlines</h1>
+            <h1 className="mb-6 font-serif text-center text-5xl font-bold md:text-6xl">JT Airlines</h1>
 
-            <p className="mb-10 max-w-2xl text-center text-lg text-slate-200">Placeholder</p>
+            <p className="mb-10 font-serif italic text-center text-lg text-slate-200">Book premium flights from Dairy Flat to select destinations across New Zealand, Chatham Islands, and Australia</p>
 
             {/*FLIGHT SEARCH BOX*/}
             <div className="w-full max-w-6xl rounded-3xl bg-white p-6 text-slate-800 shadow-2xl">
@@ -377,6 +394,7 @@ export default function Home(){
                 {/*Search Flights Button*/}
                 <div className="flex items-end">
                   <button
+                      disabled={loading}
                       onClick={searchFlights}
                       className="cursor-pointer w-full rounded-xl bg-sky-500 p-3 font-semibold text-white transition hover:bg-sky-400">
                     {/*Changes to searching if loading*/}
@@ -400,7 +418,7 @@ export default function Home(){
           {flights.length === 0 ? (
               // Displays this if flights.length = 0
               <div className="rounded-2xl bg-white p-12 text-center shadow">
-                <p className="text-lg text-slate-500">Search for flights to begin</p>
+                <p className="text-lg text-slate-500">No flights available for this route in the selected date range.</p>
               </div>
           ) : (
               //Displays this if there were flights found
@@ -435,112 +453,14 @@ export default function Home(){
                   </div>
               ) : (
                   <div className="grid gap-6">
-                    {bookings.map((flight) => {
-
-                      const booking = flight.bookings.find(
-                          (b) =>
-                              b.passengerID.toString() ===
-                              loggedInPassenger._id?.toString()
-                      );
-
-                      return (
-                          <div
-                              key={flight._id.toString()}
-                              className="rounded-3xl bg-white p-6 shadow-lg"
-                          >
-                            <div className="grid gap-6 md:grid-cols-5 md:items-center">
-
-                              {/* Flight */}
-                              <div>
-                                <p className="text-sm text-slate-500">
-                                  Flight
-                                </p>
-
-                                <h3 className="text-2xl font-bold text-slate-800">
-                                  {flight.flightNo}
-                                </h3>
-
-                                <p className="mt-1 text-slate-600">
-                                  {getAirportName(flight.origin)} →{" "}
-                                  {getAirportName(flight.dest)}
-                                </p>
-                              </div>
-
-                              {/* Departure */}
-                              <div>
-                                <p className="text-sm text-slate-500">
-                                  Departure
-                                </p>
-
-                                <p className="font-semibold text-slate-800">
-                                  {formatDate(
-                                      flight.depDate,
-                                      flight.origin
-                                  )}
-                                </p>
-
-                                <p className="font-semibold text-slate-800">
-                                  {formatTime(
-                                      flight.depDate,
-                                      flight.origin
-                                  )}
-                                </p>
-                              </div>
-
-                              {/* Arrival */}
-                              <div>
-                                <p className="text-sm text-slate-500">
-                                  Arrival
-                                </p>
-
-                                <p className="font-semibold text-slate-800">
-                                  {formatDate(
-                                      flight.arrDate,
-                                      flight.dest
-                                  )}
-                                </p>
-
-                                <p className="font-semibold text-slate-800">
-                                  {formatTime(
-                                      flight.arrDate,
-                                      flight.dest
-                                  )}
-                                </p>
-                              </div>
-
-                              {/* Booking Ref */}
-                              <div>
-                                <p className="text-sm text-slate-500">
-                                  Booking Ref
-                                </p>
-
-                                <p className="text-xl font-bold text-sky-600">
-                                  {booking?.bookingRef}
-                                </p>
-                              </div>
-
-                              {/* Price + Cancel Button*/}
-                              <div>
-                                <p className="text-sm text-slate-500">
-                                  Paid
-                                </p>
-
-                                <p className="text-2xl font-bold text-slate-800">
-                                  NZD ${flight.price}
-                                </p>
-
-                                <button
-                                    onClick={()=> handleDeleteBooking(flight._id.toString())}
-                                    className= "cursor-pointer mt-3 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400"
-                                >
-                                  Cancel Booking
-                                </button>
-                              </div>
-
-                            </div>
-                          </div>
-                      );
-                    })}
+                    {bookings.map((flight) => (
+                        <BookingCard
+                            key = {flight._id.toString()}
+                            flight= {flight}
+                            loggedInPassenger= {loggedInPassenger}
+                            onCancelAction={handleDeleteBooking}
+                        />
+                    ))}
                   </div>
               )}
             </section>
@@ -607,16 +527,18 @@ export default function Home(){
                 )}
 
                 {!creatingPassenger && (
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-center gap-3">
+                      <button onClick={handleLogin} className="cursor-pointer rounded-xl bg-sky-500 px-4 py-2 font-semibold text-white hover:bg-sky-400">
+                        Login
+                      </button>
+
                       <button
                           onClick={() => setShowLogin(false)}
-                          className="cursor-pointer rounded-xl bg-slate-200 px-4 py-2 font-semibold">
+                          className="cursor-pointer rounded-xl bg-red-500 text-white px-4 py-2 font-semibold">
                         Cancel
                       </button>
 
-                      <button onClick={handleLogin} className="cursor-pointer rounded-xl bg-sky-500 px-4 py-2 font-semibold text-white hover:bg-sky-400">
-                        Continue
-                      </button>
+
                     </div>
                 )}
               </div>
@@ -630,46 +552,100 @@ export default function Home(){
 
                 {!bookingConfirmed ? (
                     <div>
-                      <div className="mb-6 flex items-center justify-between">
-                        <div>
-                          <h2 className="text-3xl font-bold text-slate-800">Book Flight</h2>
+                      <h2 className="text-3xl font-bold text-slate-800">Book Flight</h2>
 
-                          <p className="mt-1 text-slate-500">
-                            {selectedFlight.flightNo} •{" "}
-                            {getAirportName(selectedFlight.origin)} →{" "}
-                            {getAirportName(selectedFlight.dest)}
-                          </p>
+                      <div className="mb-6 flex items-center justify-center">
+                        <div className="rounded-2xl border border-slate-200 p-6">
 
-                          <p className="mt-1 text-slate-500">
-                            {"Plane Type: "} {selectedFlight.planeType}
-                          </p>
+                          <h3 className="mb-4 text-xl font-bold text-slate-800">Passenger</h3>
+
+                          <div className="space-y-1">
+                            <p>
+                              {loggedInPassenger?.title}{" "}
+                              {loggedInPassenger?.firstName}{" "}
+                              {loggedInPassenger?.surname}
+                            </p>
+
+                            <p className="text-slate-500">{loggedInPassenger?.email}</p>
+                          </div>
+
+                          <hr className="my-6"/>
+
+                          <h3 className="mb-4 text-xl font-bold text-slate-800">Flight Details</h3>
+
+                          <div className="space-y-2">
+
+                            <p>
+                              <span className="font-semibold">Flight:</span>
+                              {" "}
+                              {selectedFlight.flightNo}
+                            </p>
+
+                            <p>
+                              <span className="font-semibold">Aircraft:</span>
+                              {" "}
+                              {selectedFlight.planeType}
+                            </p>
+
+                            <p>
+                              <span className="font-semibold">Route:</span>
+                              {" "}
+                              {getAirportName(selectedFlight.origin)}
+                              {" → "}
+                              {getAirportName(selectedFlight.dest)}
+                            </p>
+
+                            <p>
+                              <span className="font-semibold">Departure:</span>
+                              {" "}
+                              {formatDate(selectedFlight.depDate, selectedFlight.origin)}
+                              {" at "}
+                              {formatTime(selectedFlight.depDate, selectedFlight.origin)}
+                            </p>
+
+                            <p>
+                              <span className="font-semibold">Arrival:</span>
+                              {" "}
+                              {formatDate(selectedFlight.arrDate, selectedFlight.dest)}
+                              {" at "}
+                              {formatTime(selectedFlight.arrDate, selectedFlight.dest)}
+                            </p>
+
+                            <p>
+                              <span className="font-semibold">Duration:</span>
+                              {" "}
+                              {selectedFlight.duration}
+                            </p>
+
+                          </div>
+
+                          <hr className="my-6"/>
+
+                          <div className="flex items-center justify-between">
+                            <p className="text-lg font-semibold">Total Price</p>
+
+                            <p className="text-3xl font-bold text-sky-600">NZD ${selectedFlight.price}</p>
+                          </div>
+
                         </div>
 
-                        <button
-                            onClick={() => setSelectedFlight(null)}
-                            className="cursor-pointer text-2xl text-slate-400 hover:text-slate-600"
-                        >
-                          ×
-                        </button>
+
                       </div>
 
-                      <div className="mt-8 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-slate-500">
-                            Total Price
-                          </p>
-
-                          <p className="text-3xl font-bold text-sky-600">
-                            NZD ${selectedFlight.price}
-                          </p>
-                        </div>
-
+                      <div className="mt-8 flex items-center justify-center gap-3">
                         <button
-                            disabled={bookingLoading}
+                            disabled={bookingLoading}   //Prevents double-clicking
                             onClick={handleBooking}
                             className="cursor-pointer rounded-xl bg-sky-500 px-8 py-4 font-semibold text-white transition hover:bg-sky-400"
                         >
                           {bookingLoading ? "Booking..." : "Confirm Booking"}
+                        </button>
+
+                        <button
+                            onClick={() => setSelectedFlight(null)}
+                            className="cursor-pointer rounded-xl bg-red-500 px-8 py-4 font-semibold text-white transition hover:bg-red-400"
+                        >
+                          Cancel
                         </button>
                       </div>
 

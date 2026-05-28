@@ -13,8 +13,7 @@ export default function FlightCard({flight, loggedInPassenger, onSelectAction}
 
     const alreadyBooked = flight.bookings.some(
         (booking) =>
-            booking.passengerID.toString() ===
-            loggedInPassenger?._id?.toString()
+            booking.passengerID.toString() === loggedInPassenger?._id?.toString()
     );
 
     return (
