@@ -1,15 +1,14 @@
 "use client";
 
 import { Schedule, Passenger } from "@/src/types/db";
-import { formatDate, formatTime } from "../lib/dateFormatting"
+import { formatDate, formatTime } from "@/lib/dateFormatting"
 
-type Props = {
-    flight: Schedule;
-    loggedInPassenger: Passenger | null;
-    onSelectAction: (flight: Schedule) => void;
-}
-
-export default function FlightCard({flight, loggedInPassenger, onSelectAction} : Props){
+export default function FlightCard({flight, loggedInPassenger, onSelectAction}
+                                   :{
+                                        flight: Schedule;
+                                        loggedInPassenger: Passenger | null;
+                                        onSelectAction: (flight: Schedule) => void;
+                                    }){
     const seatsLeft = flight.seats - flight.bookings.length;
 
     const alreadyBooked = flight.bookings.some(
@@ -84,7 +83,7 @@ export default function FlightCard({flight, loggedInPassenger, onSelectAction} :
                                 ? "cursor-not-allowed bg-green-400"
                                 : !loggedInPassenger
                                     ? "cursor-not-allowed bg-slate-300"
-                                    : "bg-sky-500 hover:bg-sky-400"}`}>
+                                    : "cursor-pointer bg-sky-500 hover:bg-sky-400"}`}>
 
                         {seatsLeft <= 0 ? "Flight Full" : alreadyBooked
                             ? "Already Booked"

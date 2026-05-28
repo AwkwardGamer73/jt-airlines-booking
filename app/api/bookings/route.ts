@@ -124,11 +124,14 @@ export async function POST(req:NextRequest){
 
             flight: {
                 flightNo: schedule.flightNo,
+                planeType: schedule.planeType,
                 origin: schedule.origin,
                 dest: schedule.dest,
 
                 depDate: schedule.depDate,
                 arrDate: schedule.arrDate,
+
+                duration: schedule.duration,
 
                 price: schedule.price,
             },
@@ -147,6 +150,57 @@ export async function POST(req:NextRequest){
         return NextResponse.json(
             { error: "Failed to create booking" },
             { status: 500 }
+        );
+    }
+}
+
+export async function DELETE(req: NextRequest){
+    try{
+        const body = await req.json();
+
+        const {scheduleID, passengerID} = body;
+
+        if(!scheduleID || !passengerID){
+            return NextResponse.json(
+                {error: "Missing booking information"},
+                {status: 400}
+            )
+        }
+
+        const db = await connectDB();
+
+        const schedules = db.collection<Schedule>("schedules");
+
+        //Remove booking from schedule
+        const result = await schedules.updateOne(
+            {_id: new ObjectId(scheduleID)},
+            {
+                $pull: {
+                    bookings: {
+                        passengerID: new ObjectId(passengerID),
+                    },
+                },
+            }
+        );
+
+        if(result.modifiedCount === 0){
+            return NextResponse.json(
+                {error: "Booking not found"},
+                {status: 404}
+            );
+        }
+
+        return NextResponse.json({
+            success: true,
+            message: "Booking deleted successfully",
+        })
+
+    } catch(error){
+        console.error(error);
+
+        return NextResponse.json(
+            { error: "Failed to delete booking" },
+            {status: 500}
         );
     }
 }

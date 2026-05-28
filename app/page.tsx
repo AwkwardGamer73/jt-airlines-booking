@@ -41,9 +41,18 @@ export default function Home(){
 
   //Passenger bookings
   const [bookings, setBookings] = useState<Schedule[]>([]);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [bookingRef, setBookingRef] = useState("");
+  const [bookingLoading, setBookingLoading] = useState(false);
 
   //Finds all flights with specific parameters
   async function searchFlights(){
+    //Prevents searchFlights() from running without a date range
+    if(!date1 && !date2){
+      setFlights([]);
+      return;
+    }
+
     try{
       setLoading(true);
 
@@ -142,6 +151,8 @@ export default function Home(){
   }
 
   async function handleBooking(){
+    setBookingLoading(true);
+
     if(!selectedFlight || !loggedInPassenger){
       alert("Please log in first and select a flight.");
       return;
@@ -177,12 +188,54 @@ export default function Home(){
         return;
       }
 
-      setSelectedFlight(null);
+      setBookingRef(data.bookingRef);
+      setBookingConfirmed(true);
 
       await searchFlights();
 
       await fetchBookings(loggedInPassenger._id!.toString());
     } catch (error){
+      console.error(error);
+    } finally{
+      setBookingLoading(false);
+    }
+  }
+
+  async function handleDeleteBooking(scheduleID: string){
+    if(!loggedInPassenger){return;}
+
+    const confirmDelete = confirm("Are you sure you want to delete this booking?");
+
+    if (!confirmDelete){
+      return;
+    }
+
+    try{
+      const response = await fetch("api/bookings",
+          {
+            method: "DELETE",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              scheduleID,
+              passengerID: loggedInPassenger._id,
+            }),
+          });
+
+      const data = await response.json();
+
+      if(!response.ok){
+        alert(data.error);
+        return;
+      }
+
+      //Refresh bookings and flights
+      await searchFlights();
+      await fetchBookings(loggedInPassenger._id!.toString());
+    } catch(error){
       console.error(error);
     }
   }
@@ -205,13 +258,24 @@ export default function Home(){
 
             {/*Login Button*/}
             {loggedInPassenger ? (
-                <div className="rounded-xl bg-white px-5 py-2 text-sm font-semibold text-slate-800 shadow">
+                //If logged in, when button is clicked, it checks if user wants to log out
+                <button
+                    onClick={() => {
+                      const logOut = confirm("Do you want to log out?");
+
+                      if(!logOut){
+                        return;
+                      }
+
+                      setLoggedInPassenger(null);
+                    }}
+                    className="cursor-pointer rounded-2xl bg-white px-5 py-2 font-semibold text-slate-800 shadow transition hover:bg-slate-100">
                   <p>{loggedInPassenger.firstName} {loggedInPassenger.surname}</p>
-                </div>
+                </button>
             ) : (
                 <button
                     onClick={() => setShowLogin(true)}
-                    className="rounded-2xl bg-white px-5 py-2 font-semibold text-slate-800 shadow transition hover:bg-slate-100">
+                    className="cursor-pointer rounded-2xl bg-white px-5 py-2 font-semibold text-slate-800 shadow transition hover:bg-slate-100">
                   Login
                 </button>
             )}
@@ -227,7 +291,7 @@ export default function Home(){
 
             <p className="mb-10 max-w-2xl text-center text-lg text-slate-200">Placeholder</p>
 
-            {/*Flight Search Box*/}
+            {/*FLIGHT SEARCH BOX*/}
             <div className="w-full max-w-6xl rounded-3xl bg-white p-6 text-slate-800 shadow-2xl">
               <div className="grid gap-4 md:grid-cols-5">
 
@@ -251,7 +315,7 @@ export default function Home(){
                         }
 
                       }}
-                      className="w-full rounded-xl border border-slate-300 p-3">
+                      className="cursor-pointer w-full rounded-xl border border-slate-300 p-3">
                     {
                       airports.map((airport) => (
                           <option
@@ -273,7 +337,7 @@ export default function Home(){
                   <select
                       value={dest}
                       onChange={(e) => setDest(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 p-3"
+                      className="cursor-pointer w-full rounded-xl border border-slate-300 p-3"
                   >
                     {destinationOptions.map((airport) => (
                         <option
@@ -294,7 +358,7 @@ export default function Home(){
                       type="date"
                       value={date1}
                       onChange={(e) => setDate1(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 p-3"
+                      className="cursor-pointer w-full rounded-xl border border-slate-300 p-3"
                   />
                 </div>
 
@@ -306,7 +370,7 @@ export default function Home(){
                       type="date"
                       value={date2}
                       onChange={(e) => setDate2(e.target.value)}
-                      className="w-full rounded-xl border border-slate-300 p-3"
+                      className="cursor-pointer w-full rounded-xl border border-slate-300 p-3"
                   />
                 </div>
 
@@ -314,13 +378,14 @@ export default function Home(){
                 <div className="flex items-end">
                   <button
                       onClick={searchFlights}
-                      className="w-full rounded-xl bg-sky-500 p-3 font-semibold text-white transition hover:bg-sky-400">
+                      className="cursor-pointer w-full rounded-xl bg-sky-500 p-3 font-semibold text-white transition hover:bg-sky-400">
                     {/*Changes to searching if loading*/}
                     {loading ? "Searching" : "Search Flights"}
                   </button>
                 </div>
               </div>
             </div>
+
           </div>
         </section>
 
@@ -454,7 +519,7 @@ export default function Home(){
                                 </p>
                               </div>
 
-                              {/* Price */}
+                              {/* Price + Cancel Button*/}
                               <div>
                                 <p className="text-sm text-slate-500">
                                   Paid
@@ -463,6 +528,13 @@ export default function Home(){
                                 <p className="text-2xl font-bold text-slate-800">
                                   NZD ${flight.price}
                                 </p>
+
+                                <button
+                                    onClick={()=> handleDeleteBooking(flight._id.toString())}
+                                    className= "cursor-pointer mt-3 rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400"
+                                >
+                                  Cancel Booking
+                                </button>
                               </div>
 
                             </div>
@@ -518,14 +590,14 @@ export default function Home(){
 
                         <button
                             onClick={handleCreatePassenger}
-                            className="w-2/5 rounded-xl bg-sky-500 px-4 py-3 font-semibold text-white hover:bg-sky-400"
+                            className="cursor-pointer w-2/5 rounded-xl bg-sky-500 px-4 py-3 font-semibold text-white hover:bg-sky-400"
                         >
                           Create Profile
                         </button>
 
                         <button
                             onClick={() => {setCreatingPassenger(false); setShowLogin(false)}}
-                            className="w-2/5 rounded-xl bg-red-500 px-4 py-3 font-semibold text-white hover:bg-red-400"
+                            className="cursor-pointer w-2/5 rounded-xl bg-red-500 px-4 py-3 font-semibold text-white hover:bg-red-400"
                         >
                           Cancel
                         </button>
@@ -538,11 +610,11 @@ export default function Home(){
                     <div className="flex justify-end gap-3">
                       <button
                           onClick={() => setShowLogin(false)}
-                          className="rounded-xl bg-slate-200 px-4 py-2 font-semibold">
+                          className="cursor-pointer rounded-xl bg-slate-200 px-4 py-2 font-semibold">
                         Cancel
                       </button>
 
-                      <button onClick={handleLogin} className="rounded-xl bg-sky-500 px-4 py-2 font-semibold text-white hover:bg-sky-400">
+                      <button onClick={handleLogin} className="cursor-pointer rounded-xl bg-sky-500 px-4 py-2 font-semibold text-white hover:bg-sky-400">
                         Continue
                       </button>
                     </div>
@@ -555,47 +627,79 @@ export default function Home(){
         {selectedFlight && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
               <div className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl">
-                <div className="mb-6 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-3xl font-bold text-slate-800">Book Flight</h2>
 
-                    <p className="mt-1 text-slate-500">
-                      {selectedFlight.flightNo} •{" "}
-                      {getAirportName(selectedFlight.origin)} →{" "}
-                      {getAirportName(selectedFlight.dest)}
-                    </p>
+                {!bookingConfirmed ? (
+                    <div>
+                      <div className="mb-6 flex items-center justify-between">
+                        <div>
+                          <h2 className="text-3xl font-bold text-slate-800">Book Flight</h2>
 
-                    <p className="mt-1 text-slate-500">
-                      {"Plane Type: "} {selectedFlight.planeType}
-                    </p>
-                  </div>
+                          <p className="mt-1 text-slate-500">
+                            {selectedFlight.flightNo} •{" "}
+                            {getAirportName(selectedFlight.origin)} →{" "}
+                            {getAirportName(selectedFlight.dest)}
+                          </p>
 
-                  <button
-                      onClick={() => setSelectedFlight(null)}
-                      className="text-2xl text-slate-400 hover:text-slate-600"
-                  >
-                    ×
-                  </button>
-                </div>
+                          <p className="mt-1 text-slate-500">
+                            {"Plane Type: "} {selectedFlight.planeType}
+                          </p>
+                        </div>
 
-                <div className="mt-8 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-500">
-                      Total Price
-                    </p>
+                        <button
+                            onClick={() => setSelectedFlight(null)}
+                            className="cursor-pointer text-2xl text-slate-400 hover:text-slate-600"
+                        >
+                          ×
+                        </button>
+                      </div>
 
-                    <p className="text-3xl font-bold text-sky-600">
-                      NZD ${selectedFlight.price}
-                    </p>
-                  </div>
+                      <div className="mt-8 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-slate-500">
+                            Total Price
+                          </p>
 
-                  <button
-                      onClick={handleBooking}
-                      className="rounded-xl bg-sky-500 px-8 py-4 font-semibold text-white transition hover:bg-sky-400"
-                  >
-                    Confirm Booking
-                  </button>
-                </div>
+                          <p className="text-3xl font-bold text-sky-600">
+                            NZD ${selectedFlight.price}
+                          </p>
+                        </div>
+
+                        <button
+                            disabled={bookingLoading}
+                            onClick={handleBooking}
+                            className="cursor-pointer rounded-xl bg-sky-500 px-8 py-4 font-semibold text-white transition hover:bg-sky-400"
+                        >
+                          {bookingLoading ? "Booking..." : "Confirm Booking"}
+                        </button>
+                      </div>
+
+                    </div>
+                ) : (
+                    // Confirmation
+                    <div className="flex flex-col items-center justify-center text-center py-8">
+                      <h2 className="mb-3 text-4xl font-bold text-slate-800">Booking Confirmed</h2>
+
+                      <p className="mb-4 text-slate-500">Your flight has been successfully booked.</p>
+
+                      <div className="p-4">
+                        <p className="mb-1 text-sm text-slate-500">Booking Reference</p>
+
+                        <p className="text-3xl font-bold text-sky-600">{bookingRef}</p>
+                      </div>
+
+                      <button
+                          onClick={() => {
+                            setBookingConfirmed(false);
+                            setBookingRef("");
+                            setSelectedFlight(null);
+                          }}
+                          className="cursor-pointer mt-8 rounded-xl bg-sky-500 px-8 py-4 font-semibold text-white transition hover:bg-sky-400"
+                      >
+                        Done
+                      </button>
+                    </div>
+                )}
+
               </div>
             </div>
         )}

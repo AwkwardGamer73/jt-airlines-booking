@@ -53,7 +53,11 @@ export async function POST(req: NextRequest){
             );
         }
 
-        const newPassenger = {title, firstName, surname, email};
+        const newPassenger = {
+            title,
+            firstName,
+            surname,
+            email: email.toLowerCase(),};
 
         const result = await db
             .collection<Passenger>("passengers")
