@@ -38,6 +38,7 @@ export async function GET(req: NextRequest){
 
 }
 
+//Creates a booking for the user
 export async function POST(req:NextRequest){
     try{
         const body = await req.json();
@@ -66,6 +67,7 @@ export async function POST(req:NextRequest){
             )
         }
 
+        //Find passenger
         const passenger = await passengers.findOne({_id: new ObjectId(passengerID)});
 
         if(!passenger){
@@ -154,6 +156,7 @@ export async function POST(req:NextRequest){
     }
 }
 
+//Deletes/cancels a booking for a specific passenger
 export async function DELETE(req: NextRequest){
     try{
         const body = await req.json();
@@ -183,6 +186,7 @@ export async function DELETE(req: NextRequest){
             }
         );
 
+        //Checks to see if anything was modified (if there wasn't, it means the booking wasn't found)
         if(result.modifiedCount === 0){
             return NextResponse.json(
                 {error: "Booking not found"},

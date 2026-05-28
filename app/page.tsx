@@ -21,7 +21,7 @@ export default function Home(){
   //Flights found by the search
   const [flights, setFlights] = useState<Schedule[]>([]);
 
-  //Flight selected by the user
+  //Stores currently selected flight (for booking purposes)
   const [selectedFlight, setSelectedFlight] = useState<Schedule | null>(null);
 
   //To see when data is loading
@@ -78,6 +78,7 @@ export default function Home(){
     }
   }
 
+  //Finds all bookings belonging to a passenger's ID
   async function fetchBookings(passengerID: string){
     try{
       const response = await fetch(`api/bookings?passengerID=${passengerID}`)
@@ -95,6 +96,7 @@ export default function Home(){
     }
   }
 
+  //Allows user to "login" as a previously-existing passenger using the email
   async function handleLogin(){
     try{
       const response = await fetch(`api/passengers?email=${email}`);
@@ -116,6 +118,7 @@ export default function Home(){
         return;
       }
 
+      //Switching login into passenger creation mode
       setCreatingPassenger(true);
 
     } catch(error){
@@ -123,6 +126,7 @@ export default function Home(){
     }
   }
 
+  //Allows user to create a passenger entry
   async function handleCreatePassenger(){
     try{
       const response = await fetch("api/passengers", {
@@ -159,6 +163,7 @@ export default function Home(){
     }
   }
 
+  //Handles booking for a selected flight
   async function handleBooking(){
     setBookingLoading(true);
 
@@ -168,6 +173,7 @@ export default function Home(){
       return;
     }
 
+    //Prevents passengers from booking the same flight twice
     const alreadyBooked = selectedFlight.bookings.some(
         (booking) =>
             booking.passengerID.toString() === loggedInPassenger._id?.toString()
@@ -180,6 +186,7 @@ export default function Home(){
     }
 
     try{
+      //Creates a booking based on scheduled flight and passenger's ID
       const response = await fetch ("api/bookings",
           {
             method: "POST",
@@ -199,9 +206,11 @@ export default function Home(){
         return;
       }
 
+      //To get the notification to show the user the new booking reference
       setBookingRef(data.bookingRef);
       setBookingConfirmed(true);
 
+      //Updates searched flights and bookings
       await searchFlights();
 
       await fetchBookings(loggedInPassenger._id!.toString());
@@ -212,9 +221,11 @@ export default function Home(){
     }
   }
 
+  //Deletes a booking
   async function handleDeleteBooking(scheduleID: string){
     if(!loggedInPassenger){return;}
 
+    //Requires confirmation before deleting
     const confirmDelete = confirm("Are you sure you want to delete this booking?");
 
     if (!confirmDelete){
@@ -278,6 +289,7 @@ export default function Home(){
                         return;
                       }
 
+                      //Clears the logged in passenger, allowing user to log in with a different email if they wish
                       setLoggedInPassenger(null);
                     }}
                     className="cursor-pointer rounded-2xl bg-white px-5 py-2 font-semibold text-slate-800 shadow transition hover:bg-slate-100">
@@ -447,6 +459,7 @@ export default function Home(){
 
               </div>
 
+              {/*Booking Cards*/}
               {bookings.length === 0 ? (
                   <div className="rounded-2xl bg-white p-10 text-center shadow">
                     <p className="text-slate-500">No bookings found</p>
@@ -492,6 +505,7 @@ export default function Home(){
                         <option value="Ms">Ms</option>
                       </select>
 
+                      {/*Getting form data*/}
                       <input
                           type="text"
                           placeholder="First Name"
@@ -528,6 +542,7 @@ export default function Home(){
 
                 {!creatingPassenger && (
                     <div className="flex justify-center gap-3">
+
                       <button onClick={handleLogin} className="cursor-pointer rounded-xl bg-sky-500 px-4 py-2 font-semibold text-white hover:bg-sky-400">
                         Login
                       </button>
@@ -537,7 +552,6 @@ export default function Home(){
                           className="cursor-pointer rounded-xl bg-red-500 text-white px-4 py-2 font-semibold">
                         Cancel
                       </button>
-
 
                     </div>
                 )}
@@ -550,6 +564,7 @@ export default function Home(){
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
               <div className="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl">
 
+                {/*Invoice/Booking Details Display*/}
                 {!bookingConfirmed ? (
                     <div>
                       <h2 className="text-3xl font-bold text-slate-800">Book Flight</h2>
@@ -628,8 +643,6 @@ export default function Home(){
                           </div>
 
                         </div>
-
-
                       </div>
 
                       <div className="mt-8 flex items-center justify-center gap-3">
@@ -651,7 +664,7 @@ export default function Home(){
 
                     </div>
                 ) : (
-                    // Confirmation
+                    // Confirmation with booking reference
                     <div className="flex flex-col items-center justify-center text-center py-8">
                       <h2 className="mb-3 text-4xl font-bold text-slate-800">Booking Confirmed</h2>
 

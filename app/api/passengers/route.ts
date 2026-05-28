@@ -2,6 +2,7 @@ import {NextRequest, NextResponse} from "next/server";
 import {connectDB} from "@/lib/mongodb";
 import {Passenger} from "@/src/types/db";
 
+//Finds a passenger with the same email
 export async function GET(req: NextRequest){
     const email = req.nextUrl.searchParams.get("email");
 
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest){
     return NextResponse.json(passenger);
 }
 
+//Creates a passenger based on the form data
 export async function POST(req: NextRequest){
     try{
         const body = await req.json();
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest){
             .collection<Passenger>("passengers")
             .insertOne(newPassenger)
 
+        //MongoDB creates document IDs automatically, so I pulled the createdPassenger to retrieve the full document
         const createdPassenger = await db
             .collection<Passenger>("passengers")
             .findOne({ _id: result.insertedId});

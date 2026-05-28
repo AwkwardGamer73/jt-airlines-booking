@@ -59,13 +59,14 @@ export default function BookingCard({
           <p className="font-semibold text-slate-800">{formatTime(flight.arrDate, flight.dest)}</p>
         </div>
 
-        {/* Price + Cancel Button */}
+        {/* Price */}
         <div>
           <p className="text-sm text-slate-500">Paid</p>
 
           <p className="text-2xl font-bold text-slate-800">NZD ${flight.price}</p>
         </div>
 
+        {/*Cancel Button*/}
         <div>
           <button
               onClick={() => onCancelAction(flight._id.toString())}

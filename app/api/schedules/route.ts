@@ -3,6 +3,7 @@ import { Filter, Document } from "mongodb";
 import { connectDB } from "@/lib/mongodb";
 import { Schedule } from "@/src/types/db";
 
+//Finds all flights that have the search parameters
 export async function GET(req: NextRequest) {
     try {
         //Search parameters for finding scheduled flights
